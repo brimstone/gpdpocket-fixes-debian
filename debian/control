@@ -1,0 +1,15 @@
+Source: gpdpocket-fixes-debian
+Section: contrib/misc
+Priority: optional
+Maintainer: Matt Robinson <brimstone@the.narro.ws>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.5
+Homepage: https://github.com/brimstone/gpdpocket-fixes-debian
+#Vcs-Git: git://anonscm.debian.org/collab-maint/makeme.git
+#Vcs-Browser: http://anonscm.debian.org/?p=collab-maint/makeme.git;a=summary
+
+Package: gpdpocket-fixes
+Architecture: all
+Depends: ${misc:Depends}
+Description: Various fixes for the gpd pocket for debian
+ This fixes various things on the gpd pocket for debian.

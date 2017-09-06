@@ -1,0 +1,22 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          gpdfan
+# Required-Start:
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: GPD fan controller
+# Description:       Controller for cpufan for GPD Pocket systems
+### END INIT INFO
+#
+# Author:	Ryan Murray <rmurray@debian.org>
+#
+
+case "$1" in
+	start)
+		/usr/bin/gpdfan &
+	;;
+	stop)
+		kill "$(< /var/run/gpdfan.pid)"
+	;;
+esac

@@ -1,0 +1,78 @@
+#!/bin/bash
+
+set -ueo pipefail
+
+if [ -e /var/run/gpdfan.pid ]; then
+	pid="$(< /var/run/gpdfan.pid)"
+	if [ -d /proc/${pid} ]; then
+		[ -t 1 ] && echo "process already running as $pid"
+		exit 1
+	fi
+	[ -t 1 ] && echo "Stale pid $pid"
+fi
+echo "$$" > /var/run/gpdfan.pid
+
+cleanup() {
+	# Stop fans
+	echo 0 > /sys/class/gpio/gpio397/value
+	echo 0 > /sys/class/gpio/gpio398/value
+	# Enable turbo mode
+	echo 0 > /sys/devices/system/cpu/intel_pstate/no_turbo
+	# Cleanup
+	rm /var/run/gpdfan.pid
+	exit 0
+}
+
+if [ -e /etc/default/gpdfan ]; then
+	source /etc/default/gpdfan
+fi
+
+TIME="${TIME:-10}"
+MIN="${MIN:-40}"
+MED="${MAX:-50}"
+MAX="${MAX:-60}"
+TURBO="${TURBO:-60}"
+
+# Make sure the gpio pins are exported
+for pin in 397 398; do
+	if [ ! -e /sys/class/gpio/gpio${pin}/value ]; then
+		echo "${pin}" > /sys/class/gpio/export
+	fi
+done
+
+trap cleanup EXIT
+
+while true; do
+	# Get the temp
+	temp="$(cat /sys/devices/platform/coretemp.0/hwmon/hwmon*/temp*_input \
+		| sort -rn | head -n 1)"
+	temp="$(( $temp/ 1000 ))"
+	[ -t 1 ] && echo "Temp: $temp"
+	# Turn on fans as needed
+	if [ "$temp" -lt "$MIN" ]; then
+		# Stop fans
+		echo 0 > /sys/class/gpio/gpio397/value
+		echo 0 > /sys/class/gpio/gpio398/value
+	elif [ "$temp" -ge "$MIN" ] && [ "$temp" -lt "$MED" ]; then
+		# Stop fans
+		echo 1 > /sys/class/gpio/gpio397/value
+		echo 0 > /sys/class/gpio/gpio398/value
+	elif [ "$temp" -ge "$MED" ] && [ "$temp" -lt "$MAX" ]; then
+		# Stop fans
+		echo 0 > /sys/class/gpio/gpio397/value
+		echo 1 > /sys/class/gpio/gpio398/value
+	elif [ "$temp" -ge "$MAX" ]; then
+		# Stop fans
+		echo 1 > /sys/class/gpio/gpio397/value
+		echo 1 > /sys/class/gpio/gpio398/value
+	fi
+	if [ "$temp" -ge "$TURBO" ]; then
+		# Disable turbo mode
+		echo 1 > /sys/devices/system/cpu/intel_pstate/no_turbo
+	else
+		# Disable turbo mode
+		echo 0 > /sys/devices/system/cpu/intel_pstate/no_turbo
+	fi
+
+	sleep "${TIME}"
+done

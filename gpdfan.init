@@ -1,0 +1,10 @@
+#!/bin/sh
+
+case "$1" in
+	start)
+		/usr/bin/gpdfan &
+	;;
+	stop)
+		kill "$(< /var/run/gpdfan.pid)"
+	;;
+esac

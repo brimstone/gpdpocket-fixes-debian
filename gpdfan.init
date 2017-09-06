@@ -17,6 +17,10 @@ case "$1" in
 		/usr/bin/gpdfan &
 	;;
 	stop)
-		kill "$(< /var/run/gpdfan.pid)"
+		kill "$(cat /var/run/gpdfan.pid)"
+	;;
+	restart)
+		"$0" stop
+		"$0" start
 	;;
 esac
